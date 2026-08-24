@@ -5,7 +5,7 @@ TARGET = processflow
 
 all: $(TARGET)
 
-$(TARGET): $(SRC)
+$(TARGET): $(SRC)   source/processflow.h
 	$(CC) $(CFLAGS) $(SRC) -o $(TARGET)
 
 clean:
