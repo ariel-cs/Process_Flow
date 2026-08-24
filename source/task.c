@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "task.h"
 
 Task task[MAX_TASK];
@@ -32,9 +33,15 @@ void comando_task(char *linha) {
     t->args[t->num_args++] = t->programa;
 
     while ((token = strtok(NULL, " ")) != NULL && t->num_args < MAX_ARGS - 1) {
-        t->args[t->num_args++] = token;
+        char *copia = malloc(strlen(token) + 1);
+        strcpy(copia, token);
+        t->args[t->num_args++] = copia;
     }
     t->args[t->num_args] = NULL;
+
+    t->input_file[0] = '\0';
+    t->output_file[0] = '\0';
+    t->append_mode = 0;
 
     num_task++;
     printf("Tarefa '%s' cadastrada (programa: %s, %d argumentos).\n",
