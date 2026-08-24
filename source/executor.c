@@ -111,6 +111,89 @@ static void run_parallel(char *nomes[], int n) {
     }
 }
 
+static void run_pipe(char *nomes[], int n) {
+    if (n < 2) {
+        printf("Erro: 'run pipe' requer ao menos 2 tarefas.\n");
+        return;
+    }
+
+    Task *tarefas[MAX_LIST_TASKS];
+    for (int i = 0; i < n; i++) {
+        tarefas[i] = buscar_task(nomes[i]);
+        if (tarefas[i] == NULL) {
+            printf("Erro: tarefa '%s' não encontrada.\n", nomes[i]);
+            return;
+        }
+    }
+
+    int pipes[MAX_LIST_TASKS - 1][2];
+    for (int i = 0; i < n - 1; i++) {
+        if (pipe(pipes[i]) < 0) {
+            perror("pipe");
+            return;
+        }
+    }
+
+    pid_t pids[MAX_LIST_TASKS];
+
+    for (int i = 0; i < n; i++) {
+        pid_t pid = fork();
+        if (pid < 0) {
+            perror("fork");
+            return;
+        }
+
+        if (pid == 0) {
+            if (i > 0) {
+                dup2(pipes[i - 1][0], STDIN_FILENO);
+            } else if (tarefas[i]->input_file[0] != '\0') {
+                int fd = open(tarefas[i]->input_file, O_RDONLY);
+                if (fd < 0) { perror("open input"); exit(1); }
+                dup2(fd, STDIN_FILENO);
+                close(fd);
+            }
+
+            if (i < n - 1) {
+                dup2(pipes[i][1], STDOUT_FILENO);
+            } else if (tarefas[i]->output_file[0] != '\0') {
+                int flags = O_WRONLY | O_CREAT | (tarefas[i]->append_mode ? O_APPEND : O_TRUNC);
+                int fd = open(tarefas[i]->output_file, flags, 0644);
+                if (fd < 0) { perror("open output"); exit(1); }
+                dup2(fd, STDOUT_FILENO);
+                close(fd);
+            }
+
+            for (int j = 0; j < n - 1; j++) {
+                close(pipes[j][0]);
+                close(pipes[j][1]);
+            }
+
+            execvp(tarefas[i]->programa, tarefas[i]->args);
+            perror("execvp");
+            exit(1);
+        }
+
+        pids[i] = pid;
+    }
+
+    for (int i = 0; i < n - 1; i++) {
+        close(pipes[i][0]);
+        close(pipes[i][1]);
+    }
+
+    for (int i = 0; i < n; i++) {
+        int status;
+        waitpid(pids[i], &status, 0);
+        if (WIFEXITED(status)) {
+            int codigo = WEXITSTATUS(status);
+            if (codigo != 0) {
+                printf("Aviso: tarefa '%s' terminou com código de saída %d.\n",
+                       tarefas[i]->nome, codigo);
+            }
+        }
+    }
+}
+
 void comando_run(char *linha) {
     char *token = strtok(linha, " ");
     token = strtok(NULL, " ");
@@ -120,7 +203,7 @@ void comando_run(char *linha) {
         return;
     }
 
-    if (strcmp(token, "sequential") == 0 || strcmp(token, "parallel") == 0) {
+    if (strcmp(token, "sequential") == 0 || strcmp(token, "parallel") == 0 || strcmp(token, "pipe") == 0) {
         char modo[16];
         strncpy(modo, token, sizeof(modo) - 1);
         modo[sizeof(modo) - 1] = '\0';
@@ -137,16 +220,15 @@ void comando_run(char *linha) {
         }
 
         if (strcmp(modo, "sequential") == 0) run_sequential(nomes, n);
-        else run_parallel(nomes, n);
+        else if (strcmp(modo, "parallel") == 0) run_parallel(nomes, n);
+        else run_pipe(nomes, n);
         return;
     }
 
     Task *encontrada = buscar_task(token);
-
     if (encontrada == NULL) {
         printf("Erro: tarefa '%s' não encontrada.\n", token);
         return;
     }
-
     executar_task(encontrada);
 }
