@@ -1,14 +1,18 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g -std=c11
-SRC = source/main.c
+SRC = $(wildcard source/*.c)
+OBJ = $(SRC:.c=.o)
 TARGET = processflow
 
 all: $(TARGET)
 
-$(TARGET): $(SRC)   source/processflow.h
-	$(CC) $(CFLAGS) $(SRC) -o $(TARGET)
+$(TARGET): $(OBJ)
+	$(CC) $(CFLAGS) $(OBJ) -o $(TARGET)
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(TARGET) source/*.o
 
 .PHONY: all clean
