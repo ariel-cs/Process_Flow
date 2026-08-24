@@ -10,15 +10,18 @@
 
 extern char workdir_atual[512];
 
-void child_applyexec(Task *t) {
-    if (workdir_atual[0] != '\0'){
+static void aplicar_workdir(void) {
+    if (workdir_atual[0] != '\0') {
         if (chdir(workdir_atual) != 0) {
             perror("chdir");
             exit(1);
         }
     }
-    if (t->input_file[0] != '\0') {
-        int fd = open(t->input_file, O_RDONLY);
+}
+
+static void aplicar_input_redirect(const char *arquivo) {
+    if (arquivo[0] != '\0') {
+        int fd = open(arquivo, O_RDONLY);
         if (fd < 0) {
             perror("open input");
             exit(1);
@@ -26,10 +29,12 @@ void child_applyexec(Task *t) {
         dup2(fd, STDIN_FILENO);
         close(fd);
     }
+}
 
-    if (t->output_file[0] != '\0') {
-        int flags = O_WRONLY | O_CREAT | (t->append_mode ? O_APPEND : O_TRUNC);
-        int fd = open(t->output_file, flags, 0644);
+static void aplicar_output_redirect(const char *arquivo, int append) {
+    if (arquivo[0] != '\0') {
+        int flags = O_WRONLY | O_CREAT | (append ? O_APPEND : O_TRUNC);
+        int fd = open(arquivo, flags, 0644);
         if (fd < 0) {
             perror("open output");
             exit(1);
@@ -37,6 +42,12 @@ void child_applyexec(Task *t) {
         dup2(fd, STDOUT_FILENO);
         close(fd);
     }
+}
+
+void child_applyexec(Task *t) {
+    aplicar_workdir();
+    aplicar_input_redirect(t->input_file);
+    aplicar_output_redirect(t->output_file, t->append_mode);
 
     execvp(t->programa, t->args);
     perror("execvp");
@@ -152,29 +163,18 @@ static void run_pipe(char *nomes[], int n) {
         }
 
         if (pid == 0) {
-            if (workdir_atual[0] != '\0'){
-                if (chdir(workdir_atual) != 0) {
-                    perror("chdir");
-                    exit(1);
-                }
-            }
+            aplicar_workdir();
+
             if (i > 0) {
                 dup2(pipes[i - 1][0], STDIN_FILENO);
-            } else if (tarefas[i]->input_file[0] != '\0') {
-                int fd = open(tarefas[i]->input_file, O_RDONLY);
-                if (fd < 0) { perror("open input"); exit(1); }
-                dup2(fd, STDIN_FILENO);
-                close(fd);
+            } else {
+                aplicar_input_redirect(tarefas[i]->input_file);
             }
 
             if (i < n - 1) {
                 dup2(pipes[i][1], STDOUT_FILENO);
-            } else if (tarefas[i]->output_file[0] != '\0') {
-                int flags = O_WRONLY | O_CREAT | (tarefas[i]->append_mode ? O_APPEND : O_TRUNC);
-                int fd = open(tarefas[i]->output_file, flags, 0644);
-                if (fd < 0) { perror("open output"); exit(1); }
-                dup2(fd, STDOUT_FILENO);
-                close(fd);
+            } else {
+                aplicar_output_redirect(tarefas[i]->output_file, tarefas[i]->append_mode);
             }
 
             for (int j = 0; j < n - 1; j++) {

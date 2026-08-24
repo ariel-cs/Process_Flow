@@ -34,6 +34,10 @@ void comando_task(char *linha) {
 
     while ((token = strtok(NULL, " ")) != NULL && t->num_args < MAX_ARGS - 1) {
         char *copia = malloc(strlen(token) + 1);
+        if(copia == NULL){
+            printf("Erro: falha ao alocar memoria.\n");
+            return;
+        }
         strcpy(copia, token);
         t->args[t->num_args++] = copia;
     }
