@@ -8,7 +8,15 @@
 #include "task.h"
 #include "processflow.h"
 
+extern char workdir_atual[512];
+
 void child_applyexec(Task *t) {
+    if (workdir_atual[0] != '\0'){
+        if (chdir(workdir_atual) != 0) {
+            perror("chdir");
+            exit(1);
+        }
+    }
     if (t->input_file[0] != '\0') {
         int fd = open(t->input_file, O_RDONLY);
         if (fd < 0) {
@@ -144,6 +152,12 @@ static void run_pipe(char *nomes[], int n) {
         }
 
         if (pid == 0) {
+            if (workdir_atual[0] != '\0'){
+                if (chdir(workdir_atual) != 0) {
+                    perror("chdir");
+                    exit(1);
+                }
+            }
             if (i > 0) {
                 dup2(pipes[i - 1][0], STDIN_FILENO);
             } else if (tarefas[i]->input_file[0] != '\0') {
