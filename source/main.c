@@ -2,6 +2,7 @@
 #include <string.h>
 #include "task.h"
 #include "executor.h"
+#include "redirect.h"
 
 int check_comando(const char *linha, const char *comando) {
     size_t len = strlen(comando);
@@ -38,9 +39,20 @@ int main(int argc, char *argv[]) {
 
         if (check_comando(linha, "task")) {
             comando_task(linha);
-        } else if (check_comando(linha, "run")) {
+        }
+        else if (check_comando(linha, "run")) {
             comando_run(linha);
-        } else {
+        }
+        else if (check_comando(linha, "input")) {
+            comando_input(linha);
+        }
+        else if (check_comando(linha, "output")) {
+            comando_output(linha);
+        }
+        else if (check_comando(linha, "append")) {
+            comando_append(linha);
+        }
+        else {
             printf("Comando desconhecido: '%s'\n", linha);
         }
     }

@@ -3,11 +3,33 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <stdlib.h>
+#include <fcntl.h>
 #include "executor.h"
 #include "task.h"
 #include "processflow.h"
 
 void child_applyexec(Task *t) {
+    if (t->input_file[0] != '\0') {
+        int fd = open(t->input_file, O_RDONLY);
+        if (fd < 0) {
+            perror("open input");
+            exit(1);
+        }
+        dup2(fd, STDIN_FILENO);
+        close(fd);
+    }
+
+    if (t->output_file[0] != '\0') {
+        int flags = O_WRONLY | O_CREAT | (t->append_mode ? O_APPEND : O_TRUNC);
+        int fd = open(t->output_file, flags, 0644);
+        if (fd < 0) {
+            perror("open output");
+            exit(1);
+        }
+        dup2(fd, STDOUT_FILENO);
+        close(fd);
+    }
+
     execvp(t->programa, t->args);
     perror("execvp");
     exit(1);
