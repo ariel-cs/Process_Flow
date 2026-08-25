@@ -1,0 +1,6 @@
+task dormir /bin/sleep 3
+start dormir
+jobs
+wait 1
+jobs
+exit

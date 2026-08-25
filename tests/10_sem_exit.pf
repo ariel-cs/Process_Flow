@@ -1,0 +1,2 @@
+task despedida /bin/echo ate-mais
+run despedida

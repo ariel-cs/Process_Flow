@@ -1,0 +1,16 @@
+run tarefa_que_nao_existe
+task programa_ruim /bin/programa_que_nao_existe
+run programa_ruim
+task leitor /bin/cat
+input leitor arquivo_que_nao_existe.txt
+run leitor
+task escritor /bin/echo teste
+output escritor /pasta/que/nao/existe/saida.txt
+run escritor
+workdir /pasta/que/nao/existe
+wait 99
+comando_desconhecido
+
+task    falha       /bin/false
+run falha
+exit

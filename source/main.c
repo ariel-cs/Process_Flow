@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include <sys/stat.h>
 #include "task.h"
 #include "executor.h"
@@ -9,15 +10,15 @@
 char workdir_atual[512] = "";
 
 void comando_workdir(char *linha) {
-    char *token = strtok(linha, " ");
-    token = strtok(NULL, " ");
+    char *token = strtok(linha, " \t");
+    token = strtok(NULL, " \t");
     if (token == NULL) {
-        printf("Erro: comando 'workdir' pede diretório.\n");
+        printf("Erro: comando 'workdir' precisa de um diretorio.\n");
         return;
     }
     struct stat info;
     if (stat(token, &info) != 0 || !S_ISDIR(info.st_mode)) {
-        printf("Erro: diretorio '%s' não existe.\n", token);
+        printf("Erro: diretorio '%s' nao existe.\n", token);
         return;
     }
     strncpy(workdir_atual, token, sizeof(workdir_atual) - 1);
@@ -30,13 +31,24 @@ int check_comando(const char *linha, const char *comando) {
     if (strncmp(linha, comando, len) != 0) {
         return 0;
     }
-    return linha[len] == '\0' || linha[len] == ' ';
+    return linha[len] == '\0' || linha[len] == ' ' || linha[len] == '\t';
+}
+
+static int linha_vazia(const char *linha) {
+    while (*linha) {
+        if (!isspace((unsigned char)*linha)) {
+            return 0;
+        }
+        linha++;
+    }
+    return 1;
 }
 
 int processar_comando(char *linha) {
-    if (strlen(linha) == 0) {
+    if (linha_vazia(linha)) {
         return 1;
     }
+
     if (strcmp(linha, "exit") == 0) {
         return 0;
     }
@@ -117,6 +129,8 @@ static int modo_workflow(const char *caminho_arquivo) {
 }
 
 int main(int argc, char *argv[]) {
+    setvbuf(stdout, NULL, _IOLBF, 0);
+
     if (argc > 2) {
         fprintf(stderr, "Uso: %s [workflowFile]\n", argv[0]);
         return 1;
@@ -129,6 +143,7 @@ int main(int argc, char *argv[]) {
         modo_interativo();
     }
 
+    liberar_tasks();
     printf("ProcessFlow encerrado.\n");
     return erro;
 }

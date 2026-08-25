@@ -8,5 +8,6 @@ extern int num_task;
 
 void comando_task(char *linha);
 Task *buscar_task(const char *nome);
+void liberar_tasks(void);
 
 #endif

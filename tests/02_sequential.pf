@@ -1,0 +1,5 @@
+task primeira /bin/echo primeira
+task segunda /bin/echo segunda
+task terceira /bin/echo terceira
+run sequential primeira segunda terceira
+exit

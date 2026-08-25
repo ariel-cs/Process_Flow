@@ -1,0 +1,4 @@
+task marcar /bin/echo linha-nova-do-teste-06
+append marcar resultado.txt
+run marcar
+exit

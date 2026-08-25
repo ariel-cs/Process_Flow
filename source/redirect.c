@@ -4,23 +4,23 @@
 #include "task.h"
 
 static void definir_redirect(char *linha, const char *nome_comando, int is_output, int append) {
-    char *token = strtok(linha, " ");
-    token = strtok(NULL, " ");
+    char *token = strtok(linha, " \t");
+    token = strtok(NULL, " \t");
 
     if (token == NULL) {
-        printf("Erro: comando '%s' requer nome de tarefa.\n", nome_comando);
+        printf("Erro: comando '%s' precisa do nome da tarefa.\n", nome_comando);
         return;
     }
 
     Task *t = buscar_task(token);
     if (t == NULL) {
-        printf("Erro: tarefa '%s' não encontrada.\n", token);
+        printf("Erro: tarefa '%s' nao encontrada.\n", token);
         return;
     }
 
-    char *arquivo = strtok(NULL, " ");
+    char *arquivo = strtok(NULL, " \t");
     if (arquivo == NULL) {
-        printf("Erro: comando '%s' requer nome de arquivo.\n", nome_comando);
+        printf("Erro: comando '%s' precisa do nome de arquivo.\n", nome_comando);
         return;
     }
 
@@ -33,7 +33,7 @@ static void definir_redirect(char *linha, const char *nome_comando, int is_outpu
         t->input_file[sizeof(t->input_file) - 1] = '\0';
     }
 
-    printf("Redirecionamento configurado para tarefa '%s'.\n", t->nome);
+    printf("Redirecionamento feito para tarefa '%s'.\n", t->nome);
 }
 
 void comando_input(char *linha)  { definir_redirect(linha, "input", 0, 0); }

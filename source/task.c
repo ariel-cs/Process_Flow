@@ -3,27 +3,34 @@
 #include <stdlib.h>
 #include "task.h"
 
+#define DELIM " \t"
+
 Task task[MAX_TASK];
 int num_task = 0;
 
 void comando_task(char *linha) {
-    char *token = strtok(linha, " ");
-    token = strtok(NULL, " ");
+    char *token = strtok(linha, DELIM);
+    token = strtok(NULL, DELIM);
     if (token == NULL) {
-        printf("Erro: task ...\n");
+        printf("Erro: comando 'task' precisa de um nome.\n");
         return;
     }
     if (num_task >= MAX_TASK) {
-        printf("Erro: numero max de task.\n");
+        printf("Erro: numero maximo de tarefas atingido.\n");
         return;
     }
+    if (buscar_task(token) != NULL) {
+        printf("Erro: ja existe uma tarefa com o nome '%s'.\n", token);
+        return;
+    }
+
     Task *t = &task[num_task];
     strncpy(t->nome, token, sizeof(t->nome) - 1);
     t->nome[sizeof(t->nome) - 1] = '\0';
 
-    token = strtok(NULL, " ");
+    token = strtok(NULL, DELIM);
     if (token == NULL) {
-        printf("Erro: comando task pede um programa.\n");
+        printf("Erro: comando 'task' requer um programa.\n");
         return;
     }
     strncpy(t->programa, token, sizeof(t->programa) - 1);
@@ -32,9 +39,9 @@ void comando_task(char *linha) {
     t->num_args = 0;
     t->args[t->num_args++] = t->programa;
 
-    while ((token = strtok(NULL, " ")) != NULL && t->num_args < MAX_ARGS - 1) {
+    while ((token = strtok(NULL, DELIM)) != NULL && t->num_args < MAX_ARGS - 1) {
         char *copia = malloc(strlen(token) + 1);
-        if(copia == NULL){
+        if (copia == NULL) {
             printf("Erro: falha ao alocar memoria.\n");
             return;
         }
@@ -48,8 +55,8 @@ void comando_task(char *linha) {
     t->append_mode = 0;
 
     num_task++;
-    printf("Tarefa '%s' cadastrada (programa: %s, %d argumentos).\n",
-           t->nome, t->programa, t->num_args - 1);
+    printf("Tarefa '%s' cadastrada.\n",
+           t->nome);
 }
 
 Task *buscar_task(const char *nome) {
@@ -59,4 +66,12 @@ Task *buscar_task(const char *nome) {
         }
     }
     return NULL;
+}
+
+void liberar_tasks(void) {
+    for (int i = 0; i < num_task; i++) {
+        for (int j = 1; j < task[i].num_args; j++) {
+            free(task[i].args[j]);
+        }
+    }
 }

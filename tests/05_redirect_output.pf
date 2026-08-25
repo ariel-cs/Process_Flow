@@ -1,0 +1,5 @@
+task ordenar /usr/bin/sort
+input ordenar nomes.txt
+output ordenar resultado.txt
+run ordenar
+exit
